@@ -8,36 +8,33 @@ def vcopen(arg):
 	cap.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
 	return cap
 
+def boomerang(arr):
+    idx=len(arr)
+    dir=-1
+    while True:
+        idx += dir
+        if idx < 0:
+            idx = 0
+            dir = 1
+        if idx >= len(arr):
+            idx = len(arr)-1
+            dir = -1
+        yield arr[idx]
+
 MAX_AD_LENGTH = 60 # Seconds
-ad_frames = []
-ad_idx = 0
-ad_dir = 1
-
-def adRead():
-	global ad_frames
-	global ad_idx
-	global ad_dir
-
-	ad_idx += ad_dir
-	if ad_idx < 0:
-		ad_idx = 0
-		ad_dir = 1
-	if ad_idx >= len(ad_frames):
-		ad_idx = len(ad_frames)-1
-		ad_dir = -1
-	return ad_frames[ad_idx]
+TRANSITION_LENGTH = 0.5 # seconds
 
 def main(argv):
-	global ad_frames
-	global ad_idx
-	global ad_dir
-
 	cap = vcopen(0)
 	cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)
 	#cap.grab() # Force start the camera
 	show_ad = 0
+	ad_frames = []
 	ad_last_read = 0
+	ad_boomerang = None
 	fps = cap.get(cv2.CAP_PROP_FPS)
+	transition_frames_left = 0
+	transition_frame_count = 0
 	while cap.isOpened():
 
 		key = cv2.waitKey(33)
@@ -45,11 +42,12 @@ def main(argv):
 			print('Switching...', file=sys.stderr)
 			if show_ad == 0:
 				show_ad = 1
-				ad_idx = len(ad_frames)
-				ad_dir = -1
+				ad_boomerang = boomerang(ad_frames)
 			else:
 				show_ad = 0
 				ad_frames = []
+				transition_frame_count = TRANSITION_LENGTH*fps
+				transition_frames_left = transition_frame_count
 				cap.grab() # Flush the buffer
 				cap.grab()
 				cap.grab()
@@ -59,7 +57,7 @@ def main(argv):
 			if sleep_dur > 0:
 				time.sleep(sleep_dur)
 			ad_last_read = time.time()
-			frame = adRead()
+			frame = next(ad_boomerang)
 			_, ghost_image = cap.read()
 			display_image = frame//4*3+ghost_image//4
 			cv2.putText(display_image, 'AD', (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
@@ -71,6 +69,11 @@ def main(argv):
 			ad_frames.append(frame)
 			if len(ad_frames)/fps > MAX_AD_LENGTH:
 				del ad_frames[0]
+			if transition_frames_left > 0:
+				ad_frame = next(ad_boomerang)
+				frame = frame/transition_frame_count*(transition_frame_count-transition_frames_left)+ad_frame/transition_frame_count*transition_frames_left
+				frame = frame.astype('uint8')
+				transition_frames_left -= 1
 			cv2.imshow("frame",frame)
 
 		sys.stdout.buffer.write(frame.tostring())
