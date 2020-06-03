@@ -22,7 +22,7 @@ def boomerang(arr):
         yield arr[idx]
 
 MAX_AD_LENGTH = 60 # Seconds
-TRANSITION_LENGTH = 0.5 # seconds
+TRANSITION_LENGTH = 0.15 # seconds
 
 def main(argv):
 	cap = vcopen(0)
@@ -33,6 +33,7 @@ def main(argv):
 	ad_last_read = 0
 	ad_boomerang = None
 	fps = cap.get(cv2.CAP_PROP_FPS)
+	transition_frame = None
 	transition_frames_left = 0
 	transition_frame_count = 0
 	while cap.isOpened():
@@ -45,7 +46,9 @@ def main(argv):
 				ad_boomerang = boomerang(ad_frames)
 			else:
 				show_ad = 0
+				transition_frame = next(ad_boomerang)
 				ad_frames = []
+				del ad_boomerang
 				transition_frame_count = TRANSITION_LENGTH*fps
 				transition_frames_left = transition_frame_count
 				cap.grab() # Flush the buffer
@@ -70,8 +73,7 @@ def main(argv):
 			if len(ad_frames)/fps > MAX_AD_LENGTH:
 				del ad_frames[0]
 			if transition_frames_left > 0:
-				ad_frame = next(ad_boomerang)
-				frame = frame/transition_frame_count*(transition_frame_count-transition_frames_left)+ad_frame/transition_frame_count*transition_frames_left
+				frame = frame/transition_frame_count*(transition_frame_count-transition_frames_left)+transition_frame/transition_frame_count*transition_frames_left
 				frame = frame.astype('uint8')
 				transition_frames_left -= 1
 			cv2.imshow("frame",frame)
