@@ -22,7 +22,7 @@ def boomerang(arr):
         yield arr[idx]
 
 MAX_AD_LENGTH = 60 # Seconds
-TRANSITION_LENGTH = 0.15 # seconds
+TRANSITION_LENGTH = 0.10 # seconds
 
 def main(argv):
 	cap = vcopen(0)
@@ -36,7 +36,7 @@ def main(argv):
 	transition_frame = None
 	transition_frames_left = 0
 	transition_frame_count = 0
-	while cap.isOpened():
+	while True:
 
 		key = cv2.waitKey(33)
 		if key==27:
@@ -61,8 +61,10 @@ def main(argv):
 				time.sleep(sleep_dur)
 			ad_last_read = time.time()
 			frame = next(ad_boomerang)
-			_, ghost_image = cap.read()
-			display_image = frame//4*3+ghost_image//4
+			display_image = frame
+			read, ghost_image = cap.read()
+			if read:
+				display_image = display_image//4*3+ghost_image//4
 			cv2.putText(display_image, 'AD', (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
 			cv2.imshow("frame",display_image)
 
