@@ -2,6 +2,13 @@ import cv2
 import sys
 import time
 
+# Intended to be started by switch_stream_video.sh
+
+# Read from the camera and print the frames until ESC is pressed. The last one minute is the "ad"
+# When ESC is pressed, switch to the "ad" mode. Print out ad frames in reverse, reversing when we reach the end.
+# When ESC is pressed again, start from the beginning.
+# Print the frames to stdout.
+
 def vcopen(arg):
 	cap = cv2.VideoCapture(arg)
 	cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
@@ -22,7 +29,7 @@ def boomerang(arr):
         yield arr[idx]
 
 MAX_AD_LENGTH = 60 # Seconds
-TRANSITION_LENGTH = 0.10 # seconds
+TRANSITION_LENGTH = 0.05 # seconds
 
 def main(argv):
 	cap = vcopen(0)

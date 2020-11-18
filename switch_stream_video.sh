@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# The command line argument "cam" emulates a camera.
+
 if [ "$1" = "cam" -o "$1" = "receive" ]
 then
     trap 'sudo modprobe -r v4l2loopback' EXIT
