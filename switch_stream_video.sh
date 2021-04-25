@@ -4,7 +4,14 @@
 
 function cleanup {
     sudo modprobe -r v4l2loopback
-    sudo setfacl -m u:$USERNAME:rw- /dev/video0
+
+    read -p "Allow raw cam access? [Y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+       sudo setfacl -m u:$USERNAME:rw- /dev/video0
+    fi
+
     sudo setfacl -x u:switcher_user /dev/video0
     xhost -local:switcher_user
     sudo userdel switcher_user
